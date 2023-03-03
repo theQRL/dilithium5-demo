@@ -1,0 +1,17 @@
+$primary: #FFA729;
+$secondary: #4AAFFF;
+$black: #fff;
+$white: #000;
+$gray-900: #f8f9fa;
+$gray-100: #212519;
+$gray-200: #343a40;
+$gray-800: #e9ecef;
+$gray-300: #495057;
+$gray-700: #dee2e6;
+$gray-400: #6c757d;
+$gray-600: #ced4da;
+$card-cap-bg: rgba($black, .23);
+$font-family-sans-serif: 'Alte DIN 1451 Mittelschrift', sans-serif;
+$font-size-base: 1.1rem;
+@import url('https://fonts.cdnfonts.com/css/alte-din-1451-mittelschrift-gepraegt');
+@import "bootstrap/scss/bootstrap.scss";
