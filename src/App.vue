@@ -11,11 +11,11 @@ import { RouterLink, RouterView } from 'vue-router';
 
     <ul class="navbar-nav">
       <li class="nav-item">
-        <RouterLink class="nav-link" to="/">App</RouterLink>
+        <RouterLink class="nav-link" to="/">Verify</RouterLink>
       </li>
-      <li class="nav-item">
+      <!-- <li class="nav-item">
         <RouterLink class="nav-link" to="/test">Test</RouterLink>
-      </li>
+      </li> -->
       <li class="nav-item">
         <RouterLink class="nav-link" to="/about">About</RouterLink>
       </li>
