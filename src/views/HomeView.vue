@@ -9,18 +9,20 @@
           <span class="text-muted" v-if="filelistSig.length === 0">❗Signature&nbsp;&nbsp;</span>
           <span class="text-muted" v-if="filelist.length === 0">❗File&nbsp;&nbsp;</span>
           <span class="text-muted"
-            v-if="(filelistKey.length !== 0 && filelistSig.length !== 0 && filelist.length !== 0) ">
+            v-if="(filelistKey.length !== 0 && filelistSig.length !== 0 && filelist.length !== 0)">
             ✅ Ready&nbsp;&nbsp;
           </span>
-          <button class="btn btn-success btn-sm" @click="validateFiles(filelistKey, filelistSig, filelist)"
-            :disabled="(filelistKey.length === 0 || filelistSig.length === 0 || filelist.length === 0)">
-            Start
-          </button>
+          <!--
+            <button class="btn btn-success btn-sm" @click="validateFiles(filelistKey, filelistSig, filelist)"
+              :disabled="(filelistKey.length === 0 || filelistSig.length === 0 || filelist.length === 0)">
+              Start
+            </button>
+          -->
         </div>
       </div>
 
       <div class="container-fluid text-center m-5" @dragover="dragover" @dragleave="dragleave" @drop="dropKey">
-        <input id="assetsFieldHandleKey" ref="fileKey" type="file" name="fields[assetsFieldHandle][]" class="d-none"
+        <input id="assetsFieldHandleKey" ref="fileKey" type="file" name="fields[assetsFieldHandleKey][]" class="d-none"
           accept="*.*" @change="onChangeKey" />
 
         <label v-if="filelistKey.length === 0" for="assetsFieldHandleKey"
@@ -54,7 +56,7 @@
       </div>
 
       <div class="container-fluid text-center m-5" @dragover="dragover" @dragleave="dragleave" @drop="dropSig">
-        <input id="assetsFieldHandleSig" ref="fileSig" type="file" name="fields[assetsFieldHandle][]" class="d-none"
+        <input id="assetsFieldHandleSig" ref="fileSig" type="file" name="fields[assetsFieldHandleSig][]" class="d-none"
           accept="*.*" @change="onChangeSig" />
 
         <label v-if="filelistSig.length === 0" for="assetsFieldHandleSig"
@@ -100,10 +102,12 @@
         <div class="container">
           <div v-if="filelist.length && ready === filelist.length" v-cloak class="container row mt-4">
             <div v-for="file in filelist" :key="file" class="col-sm-6">
-              <div class="card mb-3">
+              <div class="card mb-3"
+                :class="{ 'bg-success': (verification[filelist.indexOf(file)] === true), 'bg-danger': (verification[filelist.indexOf(file)] === false) }">
                 <div class="card-body">
                   <div class="card-subtitle text-muted">
                     To Validate:
+                    <span v-if="(verification[filelist.indexOf(file)] === 'error')">Error</span>
                   </div>
                   <div class="card-title">{{ file.name }}</div>
                   <div class="card-body">
@@ -154,7 +158,7 @@ function readFileAsync(file) {
 
     reader.onload = () => {
       // convert first 64 bytes of reader to string
-      
+
       // check if file beings with "DILITHIUM PUBLIC KEY" identifier
       if (Buffer.from(reader.result.slice(0, 36)).toString() === '-----BEGIN DILITHIUM PUBLIC KEY-----') {
         resolve(true);
@@ -194,6 +198,7 @@ export default {
       ready: 0,
       keyError: false,
       verification: [],
+      canValidate: false,
     };
   },
   methods: {
@@ -227,6 +232,7 @@ export default {
               const fileBuffer = await readBinaryFile(file);
               // console.log('fileBuffer: ', fileBuffer);
               // now verify the signature
+              console.log('doing verification for ', file.name)
               const sig = Buffer.from(sigBuffer, 'hex');
               // convert filebuffer (arraybuffer) to msg (hexstring)
               const msg = Buffer.from(fileBuffer);
@@ -242,22 +248,40 @@ export default {
           }
         });
       });
+      // will need to loop again and if no verification boolean (this.verification[index] === null) set an error
+      files.forEach((file, index) => {
+        if (this.verification[index] === null) {
+          this.verification[index] = 'error';
+        }
+      });
+    },
+    checkCanValidate() {
+      if (this.filelist.length > 0 && this.filelistSig.length > 0 && this.filelistKey.length > 0) {
+        this.canValidate = true;
+        this.validateFiles(this.filelistKey, this.filelistSig, this.filelist)
+      } else {
+        this.canValidate = false;
+      }
     },
     async onChange() {
       const fl = [...this.$refs.file.files];
       Object.keys(fl).forEach(async (i) => {
         const file = fl[i];
         this.ready += 1;
-        this.verification.push(false);
+        this.verification.push(null);
       });
       this.filelist = [...fl, ...this.filelist];
+      this.verification = new Array(this.filelist.length).fill(null);
+      this.checkCanValidate();
     },
     async onChangeSig() {
+      console.log('changing sig file');
       const fl = [...this.$refs.fileSig.files];
-      Object.keys(fl).forEach(async (i) => {
-        const file = fl[i];
-      });
-      this.filelistSig = [...fl, ...this.filelistSig];
+      // Object.keys(fl).forEach(async (i) => {
+      //   const file = fl[i];
+      // });
+      this.filelistSig = [...fl];
+      this.checkCanValidate();
     },
     async onChangeKey() {
       const fl = [...this.$refs.fileKey.files];
@@ -275,20 +299,36 @@ export default {
           that.keyError = false;
         }
       });
-      this.filelistKey = [...fl, ...this.filelistKey];
+      this.filelistKey = [...fl];
+      this.checkCanValidate();
     },
     remove(i) {
       this.filelist.splice(i, 1);
       this.ready -= 1;
       this.verification.splice(i, 1);
+      this.checkCanValidate();
     },
     removeKey(i) {
       this.filelistKey.splice(i, 1);
-      this.verification = new Array(this.filelist.length).fill(false);
+      // remove item from FileList
+      let dt = new DataTransfer();
+      let x = Array.from(this.$refs.fileKey.files);
+      x.splice(i, 1);
+      x.forEach((file) => { dt.items.add(file); });
+      this.$refs.fileKey.files = dt.files;
+      this.verification = new Array(this.filelist.length).fill(null);
+      this.checkCanValidate();
     },
     removeSig(i) {
       this.filelistSig.splice(i, 1);
-      this.verification = new Array(this.filelist.length).fill(false);
+      // remove item from FileList
+      let dt = new DataTransfer();
+      let x = Array.from(this.$refs.fileSig.files);
+      x.splice(i, 1);
+      x.forEach((file) => { dt.items.add(file); });
+      this.$refs.fileSig.files = dt.files;
+      this.verification = new Array(this.filelist.length).fill(null);
+      this.checkCanValidate();
     },
     dragover(event) {
       event.preventDefault();
