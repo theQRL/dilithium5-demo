@@ -109,12 +109,14 @@
                 :class="{ 'bg-success': (verification[filelist.indexOf(file)] === true), 'bg-danger': (verification[filelist.indexOf(file)] === false) }">
                 <div class="card-body">
                   <div class="card-subtitle text-muted">
-                    To Validate:
                     <span v-if="(verification[filelist.indexOf(file)] === 'error')">Error</span>
                   </div>
                   <div class="card-title">{{ file.name }}</div>
                   <div class="card-body">
-                    {{ verification[filelist.indexOf(file)] }}
+                    <span v-if="(verification[filelist.indexOf(file)] === null)">Pending verification</span>
+                    <span v-if="(verification[filelist.indexOf(file)] === true) ">PASSED verification</span>
+                    <span v-if="(verification[filelist.indexOf(file)] === false) ">FAILED verification</span>
+                    <span v-if="(verification[filelist.indexOf(file)] === 'error') ">No signature found</span>
                     <div></div>
                     <button type="button" title="Remove file" class="btn btn-danger btn-sm"
                       @click="remove(filelist.indexOf(file))">
