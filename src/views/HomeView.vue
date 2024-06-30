@@ -41,7 +41,10 @@
                   <div class="card-subtitle text-muted">
                     Public Key file:
                   </div>
-                  <div class="card-title">{{ file.name }}</div>
+                  <div class="card-title">
+                    {{ file.name }}<br />
+                    <span class="text-success">✅ Valid public key file</span>
+                  </div>
                   <div class="card-body">
                     <button type="button" title="Remove file" class="btn btn-danger btn-sm"
                       @click="removeKey(filelistKey.indexOf(file))">
