@@ -41,7 +41,10 @@
                   <div class="card-subtitle text-muted">
                     Public Key file:
                   </div>
-                  <div class="card-title">{{ file.name }}</div>
+                  <div class="card-title">
+                    {{ file.name }}<br />
+                    <span class="text-success">✅ Valid public key file</span>
+                  </div>
                   <div class="card-body">
                     <button type="button" title="Remove file" class="btn btn-danger btn-sm"
                       @click="removeKey(filelistKey.indexOf(file))">
@@ -106,12 +109,14 @@
                 :class="{ 'bg-success': (verification[filelist.indexOf(file)] === true), 'bg-danger': (verification[filelist.indexOf(file)] === false) }">
                 <div class="card-body">
                   <div class="card-subtitle text-muted">
-                    To Validate:
                     <span v-if="(verification[filelist.indexOf(file)] === 'error')">Error</span>
                   </div>
                   <div class="card-title">{{ file.name }}</div>
                   <div class="card-body">
-                    {{ verification[filelist.indexOf(file)] }}
+                    <span v-if="(verification[filelist.indexOf(file)] === null)">Pending verification</span>
+                    <span v-if="(verification[filelist.indexOf(file)] === true) ">PASSED verification</span>
+                    <span v-if="(verification[filelist.indexOf(file)] === false) ">FAILED verification</span>
+                    <span v-if="(verification[filelist.indexOf(file)] === 'error') ">No signature found</span>
                     <div></div>
                     <button type="button" title="Remove file" class="btn btn-danger btn-sm"
                       @click="remove(filelist.indexOf(file))">
@@ -233,7 +238,7 @@ export default {
               // console.log('fileBuffer: ', fileBuffer);
               // now verify the signature
               console.log('doing verification for ', file.name)
-              const sig = Buffer.from(sigBuffer, 'hex');
+              const sig = Buffer.from(signature, 'hex');
               // convert filebuffer (arraybuffer) to msg (hexstring)
               const msg = Buffer.from(fileBuffer);
               const pk = Buffer.from(keyBuffer, 'hex');
@@ -281,6 +286,7 @@ export default {
       //   const file = fl[i];
       // });
       this.filelistSig = [...fl];
+      this.verification = new Array(this.filelist.length).fill(null);
       this.checkCanValidate();
     },
     async onChangeKey() {
@@ -299,6 +305,7 @@ export default {
           that.keyError = false;
         }
       });
+      this.verification = new Array(this.filelist.length).fill(null);
       this.filelistKey = [...fl];
       this.checkCanValidate();
     },
