@@ -238,7 +238,7 @@ export default {
               // console.log('fileBuffer: ', fileBuffer);
               // now verify the signature
               console.log('doing verification for ', file.name)
-              const sig = Buffer.from(sigBuffer, 'hex');
+              const sig = Buffer.from(signature, 'hex');
               // convert filebuffer (arraybuffer) to msg (hexstring)
               const msg = Buffer.from(fileBuffer);
               const pk = Buffer.from(keyBuffer, 'hex');
@@ -286,6 +286,7 @@ export default {
       //   const file = fl[i];
       // });
       this.filelistSig = [...fl];
+      this.verification = new Array(this.filelist.length).fill(null);
       this.checkCanValidate();
     },
     async onChangeKey() {
@@ -304,6 +305,7 @@ export default {
           that.keyError = false;
         }
       });
+      this.verification = new Array(this.filelist.length).fill(null);
       this.filelistKey = [...fl];
       this.checkCanValidate();
     },
