@@ -6,17 +6,18 @@
       <div class="row text-center">
         <div class="col">
           <span v-if="filelistKey.length === 0" class="text-muted">❗Key&nbsp;&nbsp;</span>
-          <span v-if="filelistSig.length === 0" class="text-muted">❗Signature&nbsp;&nbsp;</span>
           <span v-if="filelist.length === 0" class="text-muted">❗File&nbsp;&nbsp;</span>
-          <span v-if="filelistKey.length !== 0 && filelistSig.length !== 0 && filelist.length !== 0" class="text-muted">
+          <span v-if="filelistKey.length !== 0 && filelist.length !== 0" class="text-muted">
             ✅ Ready&nbsp;&nbsp;
           </span>
-          <!--
-            <button class="btn btn-success btn-sm" @click="validateFiles(filelistKey, filelistSig, filelist)"
-              :disabled="(filelistKey.length === 0 || filelistSig.length === 0 || filelist.length === 0)">
-              Start
-            </button>
-          -->
+          <button
+            v-if="filelistKey.length !== 0 && filelist.length !== 0"
+            class="btn btn-success btn-sm"
+            :disabled="filelistKey.length === 0 || filelist.length === 0"
+            @click="validateFiles(filelistKey, filelist)"
+          >
+            Start
+          </button>
         </div>
       </div>
 
@@ -37,7 +38,7 @@
           class="p-3 pt-5 pb-5 border border-primary bg-light cursor-pointer"
         >
           <div>
-            Drop public key file or
+            Drop private key file or
             <span class="underline">click here</span> to select
           </div>
         </label>
@@ -47,10 +48,10 @@
             <div v-for="file in filelistKey" :key="file" class="col-sm-6 mx-auto">
               <div class="card mb-3">
                 <div class="card-body">
-                  <div class="card-subtitle text-muted">Public Key file:</div>
+                  <div class="card-subtitle text-muted">Private Key file:</div>
                   <div class="card-title">
                     {{ file.name }}<br />
-                    <span class="text-success">✅ Valid public key file</span>
+                    <span class="text-success">✅ Valid private key file</span>
                   </div>
                   <div class="card-body">
                     <button
@@ -58,52 +59,6 @@
                       title="Remove file"
                       class="btn btn-danger btn-sm"
                       @click="removeKey(filelistKey.indexOf(file))"
-                    >
-                      Remove &times;
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="container-fluid text-center mt-5" @dragover="dragover" @dragleave="dragleave" @drop="dropSig">
-        <input
-          id="assetsFieldHandleSig"
-          ref="fileSig"
-          type="file"
-          name="fields[assetsFieldHandleSig][]"
-          class="d-none"
-          accept="*.*"
-          @change="onChangeSig"
-        />
-
-        <label
-          v-if="filelistSig.length === 0"
-          for="assetsFieldHandleSig"
-          class="p-3 pt-5 pb-5 border border-primary bg-light cursor-pointer"
-        >
-          <div>
-            Drop signature file or
-            <span class="underline">click here</span> to select
-          </div>
-        </label>
-
-        <div class="container">
-          <div v-if="filelistSig.length !== 0" v-cloak class="container row mt-4">
-            <div v-for="file in filelistSig" :key="file" class="col-sm-6 mx-auto">
-              <div class="card mb-3">
-                <div class="card-body">
-                  <div class="card-subtitle text-muted">Signature file:</div>
-                  <div class="card-title">{{ file.name }}</div>
-                  <div class="card-body">
-                    <button
-                      type="button"
-                      title="Remove file"
-                      class="btn btn-danger btn-sm"
-                      @click="removeSig(filelistSig.indexOf(file))"
                     >
                       Remove &times;
                     </button>
@@ -129,7 +84,7 @@
 
         <label for="assetsFieldHandle" class="p-3 pt-5 pb-5 border border-primary bg-light cursor-pointer">
           <div>
-            Drop file(s) to validate or
+            Drop file(s) to sign or
             <span class="underline">click here</span> to select
           </div>
         </label>
@@ -149,10 +104,10 @@
                   </div>
                   <div class="card-title">{{ file.name }}</div>
                   <div class="card-body">
-                    <span v-if="verification[filelist.indexOf(file)] === null">Pending verification</span>
-                    <span v-if="verification[filelist.indexOf(file)] === true">PASSED verification</span>
+                    <span v-if="verification[filelist.indexOf(file)] === null">Pending signing</span>
+                    <span v-if="verification[filelist.indexOf(file)] === true">Signed</span>
                     <span v-if="verification[filelist.indexOf(file)] === false">FAILED verification</span>
-                    <span v-if="verification[filelist.indexOf(file)] === 'error'">No signature found</span>
+                    <span v-if="verification[filelist.indexOf(file)] === 'error'">No valid signature found</span>
                     <div></div>
                     <button
                       type="button"
@@ -161,6 +116,15 @@
                       @click="remove(filelist.indexOf(file))"
                     >
                       Remove &times;
+                    </button>
+                    <button
+                      v-if="verification[filelist.indexOf(file)] !== null"
+                      type="button"
+                      title="View signature"
+                      class="btn btn-secondary btn-sm mx-1"
+                      @click="view(filelist.indexOf(file))"
+                    >
+                      View signature
                     </button>
                   </div>
                 </div>
@@ -171,10 +135,32 @@
       </div>
     </div>
   </main>
+  <div
+    ref="modalResult"
+    class="modal"
+    :class="{ show: activeResult, 'd-block': activeResult }"
+    tabindex="-1"
+    role="dialog"
+  >
+    <div :class="{ show: activeResult, 'd-block': activeResult }" class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">Signature for {{ filename }}</div>
+        <div class="modal-body">
+          <textarea ref="textToCopy" v-model="compiledString" class="results-TA" readonly></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" @click="activeResult = false">Close</button>
+          <button type="button" class="btn btn-secondary" @click="copyToClipboard">Copy to clipboard</button>
+          <button type="button" class="btn btn-primary" @click="downloadSig()">Download</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div v-if="active || activeResult" class="modal-backdrop fade show"></div>
 </template>
 
 <script>
-import { cryptoSignVerify } from '@theqrl/dilithium5';
+import { cryptoSign } from '@theqrl/dilithium5';
 
 const readFileAsText = (inputFile) => {
   const temporaryFileReader = new FileReader();
@@ -199,8 +185,8 @@ function readFileAsync(file) {
     reader.onload = () => {
       // convert first 64 bytes of reader to string
 
-      // check if file beings with "DILITHIUM PUBLIC KEY" identifier
-      if (Buffer.from(reader.result.slice(0, 36)).toString() === '-----BEGIN DILITHIUM PUBLIC KEY-----') {
+      // check if file beings with "DILITHIUM PRIVATE KEY" identifier
+      if (Buffer.from(reader.result.slice(0, 37)).toString() === '-----BEGIN DILITHIUM PRIVATE KEY-----') {
         resolve(true);
       } else {
         resolve(false);
@@ -234,80 +220,40 @@ export default {
     return {
       filelist: [],
       filelistKey: [],
-      filelistSig: [],
       ready: 0,
+      activeResult: false,
       keyError: false,
       verification: [],
       canValidate: false,
+      compiledString: '',
+      filename: '',
     };
   },
   methods: {
-    async validateFiles(key, sigFile, files) {
+    async validateFiles(key, files) {
       // first load key into a Buffer
       let keyBuffer = await readFileAsText(key[0]);
       // strip first and last line from keyBuffer
       keyBuffer = keyBuffer.split('\n').slice(1, -1).join('\n');
-      if (keyBuffer.split('\n')[keyBuffer.split('\n').length - 1] === '-----END DILITHIUM PUBLIC KEY-----') {
-        // remove last line
-        keyBuffer = keyBuffer.split('\n').slice(0, -1).join('\n');
-      }
       // replace all newlines in keyBuffer
       keyBuffer = keyBuffer.replace(/\n/g, '');
       // convert keyBuffer to hexstring from base64
       keyBuffer = Buffer.from(keyBuffer, 'base64').toString('hex');
-      // now signature into a Buffer
-      const sigBuffer = await readFileAsText(sigFile[0]);
-      // parse sigBuffer to get the signatures as a string
-      const sigString = sigBuffer.toString();
-      // split sigString into array of signatures
-      const sigArray = sigString.split('\n');
-      // const verification = new Array(files.length).fill(false);
       files.forEach(async (file, index) => {
-        // const fileBuffer = await readBinaryFile(file);
-        // const msg = Buffer.from(fileBuffer);
-        // const pk = Buffer.from(keyBuffer, 'hex');
-        sigArray.forEach(async (sig) => {
-          // sig contains a dilithium signature and a filename... split by a space
-          const [signature, filename] = sig.split(' ');
-          console.log('signature: ', signature.length);
-          if (signature.length === 9190 && filename.length > 0) {
-            console.log('does filename match: ', file.name, filename);
-            if (file.name === filename) {
-              // now we need to verify the signature
-              // first we need to load the file into a buffer
-              const fileBuffer = await readBinaryFile(file);
-              // console.log('fileBuffer: ', fileBuffer);
-              // now verify the signature
-              console.log('doing verification for ', file.name);
-              const sigHex = Buffer.from(signature, 'hex');
-              // convert filebuffer (arraybuffer) to msg (hexstring)
-              const msg = Buffer.from(fileBuffer);
-              const pk = Buffer.from(keyBuffer, 'hex');
-              const verified = cryptoSignVerify(sigHex, msg, pk);
-              console.log('verified: ', verified);
-              if (verified === true) {
-                this.verification[index] = true;
-              } else {
-                this.verification[index] = false;
-              }
-            }
-          }
-        });
-      });
-      // will need to loop again and if no verification boolean (this.verification[index] === null) set an error
-      files.forEach((file, index) => {
-        if (this.verification[index] === null) {
-          this.verification[index] = 'error';
-        }
+        const fileBuffer = await readBinaryFile(file);
+        const msg = Buffer.from(fileBuffer);
+        const sk = Buffer.from(keyBuffer, 'hex');
+        let sig = cryptoSign(msg, sk);
+        console.log('signature: ', sig);
+        // get first 4595 bytes of sig (since this returns SIGNATURE + MESSAGE)
+        sig = Buffer.from(sig).slice(0, 4595).toString('hex');
+        this.verification[index] = sig;
       });
     },
     checkCanValidate() {
-      if (this.filelist.length > 0 && this.filelistSig.length > 0 && this.filelistKey.length > 0) {
-        this.canValidate = true;
-        this.validateFiles(this.filelistKey, this.filelistSig, this.filelist);
-      } else {
-        this.canValidate = false;
-      }
+      // redundant function to check if we can validate
+      // trigger to *sign* is via the "Start" button
+      // (as signing might take a while, user should trigger)
     },
     async onChange() {
       const fl = [...this.$refs.file.files];
@@ -356,6 +302,12 @@ export default {
       this.ready -= 1;
       this.verification.splice(i, 1);
       this.checkCanValidate();
+    },
+    view(i) {
+      this.activeResult = true;
+      this.compiledString = this.verification[i];
+      this.filename = this.filelist[i].name;
+      // console.log('view logic here for index=', i);
     },
     removeKey(i) {
       this.filelistKey.splice(i, 1);
@@ -410,6 +362,39 @@ export default {
       this.onChangeSig();
       event.currentTarget.classList.remove('bg-success');
     },
+    async copyToClipboard() {
+      const shareData = {
+        title: 'QRL Dilithium',
+        text: this.compiledString,
+        url: 'https://dilithium.theqrl.org',
+      };
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.log('Could not copy -- trying clipboard fallback');
+        this.$refs.textToCopy.focus();
+        this.$refs.textToCopy.select();
+        document.execCommand('copy');
+      }
+    },
+    downloadSig() {
+      const sigData = `${this.compiledString} ${this.filename}\n`;
+      const binBlob = new Blob([sigData]);
+      const a = window.document.createElement('a');
+      a.href = window.URL.createObjectURL(binBlob, {
+        type: 'text/plain',
+      });
+      a.download = `${this.filename}.sig`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    },
   },
 };
 </script>
+<style scoped>
+.results-TA {
+  height: 200px;
+  width: 100%;
+}
+</style>
