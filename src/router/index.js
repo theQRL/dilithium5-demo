@@ -14,6 +14,11 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/keypair',
+      name: 'keypair',
+      component: () => import('../views/KeypairView.vue'),
+    },
+    {
       path: '/sign',
       name: 'sign',
       component: () => import('../views/SignView.vue'),

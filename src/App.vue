@@ -14,6 +14,9 @@ import { RouterLink, RouterView } from 'vue-router';
         <RouterLink class="nav-link" to="/">Verify</RouterLink>
       </li>
       <li class="nav-item">
+        <RouterLink class="nav-link" to="/keypair">Keypair</RouterLink>
+      </li>
+      <li class="nav-item">
         <RouterLink class="nav-link" to="/sign">Sign</RouterLink>
       </li>
       <li class="nav-item">
