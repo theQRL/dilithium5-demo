@@ -3,12 +3,29 @@ import { RouterLink, RouterView } from 'vue-router';
 </script>
 
 <template>
-  <nav class="navbar navbar-expand navbar-light bg-light">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="/">
       <img src="./assets/yellow.svg" height="60" class="d-inline-block align-top" />
       <div class="sub">Dilithium 5</div>
     </a>
 
+    <ul class="collapse navbar-collapse navbar-nav">
+      <li class="nav-item">
+        <RouterLink class="nav-link" to="/">Verify</RouterLink>
+      </li>
+      <li class="nav-item">
+        <RouterLink class="nav-link" to="/keypair">Keypair</RouterLink>
+      </li>
+      <li class="nav-item">
+        <RouterLink class="nav-link" to="/sign">Sign</RouterLink>
+      </li>
+      <li class="nav-item">
+        <RouterLink class="nav-link" to="/about">About</RouterLink>
+      </li>
+    </ul>
+  </nav>
+
+  <nav class="navbar navbar-expand navbar-light bg-light d-lg-none">
     <ul class="navbar-nav">
       <li class="nav-item">
         <RouterLink class="nav-link" to="/">Verify</RouterLink>
@@ -26,7 +43,6 @@ import { RouterLink, RouterView } from 'vue-router';
   </nav>
   <RouterView class="p-3 pt-5"></RouterView>
 </template>
-
 <style lang="scss" scoped>
 .navbar {
   padding-bottom: 15px;
