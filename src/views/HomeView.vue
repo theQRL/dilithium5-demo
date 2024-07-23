@@ -261,30 +261,22 @@ export default {
       const sigString = sigBuffer.toString();
       // split sigString into array of signatures
       const sigArray = sigString.split('\n');
-      // const verification = new Array(files.length).fill(false);
+      // loop through files and signatures
       files.forEach(async (file, index) => {
-        // const fileBuffer = await readBinaryFile(file);
-        // const msg = Buffer.from(fileBuffer);
-        // const pk = Buffer.from(keyBuffer, 'hex');
         sigArray.forEach(async (sig) => {
           // sig contains a dilithium signature and a filename... split by a space
-          const [signature, filename] = sig.split(' ');
-          console.log('signature: ', signature.length);
+          const signature = sig.split(' ')[0];
+          const filename = sig
+            .split(' ')
+            .slice(1, sig.length - 1)
+            .join(' ');
           if (signature.length === 9190 && filename.length > 0) {
-            console.log('does filename match: ', file.name, filename);
             if (file.name === filename) {
-              // now we need to verify the signature
-              // first we need to load the file into a buffer
               const fileBuffer = await readBinaryFile(file);
-              // console.log('fileBuffer: ', fileBuffer);
-              // now verify the signature
-              console.log('doing verification for ', file.name);
               const sigHex = Buffer.from(signature, 'hex');
-              // convert filebuffer (arraybuffer) to msg (hexstring)
               const msg = Buffer.from(fileBuffer);
               const pk = Buffer.from(keyBuffer, 'hex');
               const verified = cryptoSignVerify(sigHex, msg, pk);
-              console.log('verified: ', verified);
               if (verified === true) {
                 this.verification[index] = true;
               } else {
