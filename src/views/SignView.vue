@@ -12,7 +12,7 @@
           </span>
           <button
             v-if="filelistKey.length !== 0 && filelist.length !== 0"
-            class="btn btn-success btn-sm"
+            class="btn btn-success"
             :disabled="filelistKey.length === 0 || filelist.length === 0"
             @click="validateFiles(filelistKey, filelist)"
           >
@@ -134,29 +134,29 @@
         </div>
       </div>
     </div>
-  </main>
-  <div
-    ref="modalResult"
-    class="modal"
-    :class="{ show: activeResult, 'd-block': activeResult }"
-    tabindex="-1"
-    role="dialog"
-  >
-    <div :class="{ show: activeResult, 'd-block': activeResult }" class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">Signature for {{ filename }}</div>
-        <div class="modal-body">
-          <textarea ref="textToCopy" v-model="compiledString" class="results-TA" readonly></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-light" @click="activeResult = false">Close</button>
-          <button type="button" class="btn btn-secondary" @click="copyToClipboard">Copy to clipboard</button>
-          <button type="button" class="btn btn-primary" @click="downloadSig()">Download</button>
+    <div
+      ref="modalResult"
+      class="modal"
+      :class="{ show: activeResult, 'd-block': activeResult }"
+      tabindex="-1"
+      role="dialog"
+    >
+      <div :class="{ show: activeResult, 'd-block': activeResult }" class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">Signature for {{ filename }}</div>
+          <div class="modal-body">
+            <textarea ref="textToCopy" v-model="compiledString" class="results-TA" readonly></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" @click="activeResult = false">Close</button>
+            <button type="button" class="btn btn-secondary" @click="copyToClipboard">Copy to clipboard</button>
+            <button type="button" class="btn btn-primary" @click="downloadSig()">Download</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div v-if="active || activeResult" class="modal-backdrop fade show"></div>
+    <div v-if="activeResult" class="modal-backdrop fade show"></div>
+  </main>
 </template>
 
 <script>
@@ -244,7 +244,6 @@ export default {
         const msg = Buffer.from(fileBuffer);
         const sk = Buffer.from(keyBuffer, 'hex');
         let sig = cryptoSign(msg, sk);
-        console.log('signature: ', sig);
         // get first 4595 bytes of sig (since this returns SIGNATURE + MESSAGE)
         sig = Buffer.from(sig).slice(0, 4595).toString('hex');
         this.verification[index] = sig;
@@ -267,7 +266,6 @@ export default {
       this.checkCanValidate();
     },
     async onChangeSig() {
-      console.log('changing sig file');
       const fl = [...this.$refs.fileSig.files];
       // Object.keys(fl).forEach(async (i) => {
       //   const file = fl[i];
@@ -307,7 +305,6 @@ export default {
       this.activeResult = true;
       this.compiledString = this.verification[i];
       this.filename = this.filelist[i].name;
-      // console.log('view logic here for index=', i);
     },
     removeKey(i) {
       this.filelistKey.splice(i, 1);

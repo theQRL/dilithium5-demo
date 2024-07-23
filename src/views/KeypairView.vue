@@ -2,8 +2,10 @@
   <main>
     <div class="container">
       <h4 v-if="allowActions()">Generate new random keypair</h4>
-      <button v-if="allowActions()" class="btn btn-outline-secondary" type="button" @click="generateKeypair(true)">Generate</button>
-      <button class="btn btn-outline-danger" type="button" @click="clear()">Reset</button>
+      <button v-if="allowActions()" class="btn btn-outline-secondary" type="button" @click="generateKeypair(true)">
+        Generate
+      </button>
+      <button v-if="!allowActions()" class="btn btn-outline-danger" type="button" @click="clear()">Reset</button>
     </div>
     <hr v-if="allowActions()" />
     <div v-if="allowActions()" class="container">
@@ -284,6 +286,6 @@ export default {
 <style scoped>
 h4 > small {
   font-size: 1.1rem;
-  color: #4AAFFF;
+  color: #4aafff;
 }
 </style>
