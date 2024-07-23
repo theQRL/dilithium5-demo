@@ -1,14 +1,15 @@
 <template>
   <main>
     <div class="container">
-      <h4>Generate new random keypair</h4>
-      <button class="btn btn-outline-secondary" type="button" @click="generateKeypair(true)">Generate</button>
+      <h4 v-if="allowActions()">Generate new random keypair</h4>
+      <button v-if="allowActions()" class="btn btn-outline-secondary" type="button" @click="generateKeypair(true)">Generate</button>
+      <button class="btn btn-outline-danger" type="button" @click="clear()">Reset</button>
     </div>
-    <hr />
-    <div class="container">
+    <hr v-if="allowActions()" />
+    <div v-if="allowActions()" class="container">
       <h4>Regenerate keypair from existing hexseed</h4>
       <div class="input-group mb-3">
-        <input type="text" class="form-control" placeholder="Hexseed" v-model="hexseed" @input="reset()" />
+        <input v-model="hexseed" type="text" class="form-control" placeholder="Hexseed" @input="reset()" />
         <div class="input-group-append">
           <button class="btn btn-outline-secondary" type="button" @click="generateKeypair(false)">Generate</button>
         </div>
@@ -18,41 +19,75 @@
       </label>
     </div>
     <hr />
-    <div>
+    <div v-if="!allowActions()">
       <div class="container">
-        <h4>ID/Address {{ address }}</h4>
+        <h4>
+          ID/Address <small>{{ address }} <button class="btn btn-outline-secondary btn-sm">Copy</button></small>
+        </h4>
         <h5>Hexseed</h5>
         <div class="input-group mb-3">
           <input type="text" class="form-control" :value="validatedHS(hexseed)" readonly />
           <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="button" @click="copyToClipboard('hexseed')">Copy</button>
+            <button
+              :disabled="allowActions()"
+              class="btn btn-outline-secondary"
+              type="button"
+              @click="copyToClipboard('hexseed')"
+            >
+              Copy
+            </button>
           </div>
           <div class="input-group-append">
-            <button class="btn btn-outline-primary" type="button" @click="download('hexseed')">Download</button>
+            <button
+              :disabled="allowActions()"
+              class="btn btn-outline-primary"
+              type="button"
+              @click="download('hexseed')"
+            >
+              Download
+            </button>
           </div>
         </div>
       </div>
       <div class="container">
         <h5>Public key</h5>
         <div class="input-group mb-3">
-          <input type="text" class="form-control" v-model="pk" readonly />
+          <input v-model="pk" type="text" class="form-control" readonly />
           <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="button" @click="copyToClipboard('pk')">Copy</button>
+            <button
+              :disabled="allowActions()"
+              class="btn btn-outline-secondary"
+              type="button"
+              @click="copyToClipboard('pk')"
+            >
+              Copy
+            </button>
           </div>
           <div class="input-group-append">
-            <button class="btn btn-outline-primary" type="button" @click="download('pk')">Download</button>
+            <button :disabled="allowActions()" class="btn btn-outline-primary" type="button" @click="download('pk')">
+              Download
+            </button>
           </div>
         </div>
       </div>
       <div class="container">
         <h5>Secret key</h5>
         <div class="input-group mb-3">
-          <input type="text" class="form-control" v-model="sk" readonly />
+          <input v-model="sk" type="text" class="form-control" readonly />
           <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="button" @click="copyToClipboard('sk')">Copy</button>
+            <button
+              :disabled="allowActions()"
+              class="btn btn-outline-secondary"
+              type="button"
+              @click="copyToClipboard('sk')"
+            >
+              Copy
+            </button>
           </div>
           <div class="input-group-append">
-            <button class="btn btn-outline-primary" type="button" @click="download('sk')">Download</button>
+            <button :disabled="allowActions()" class="btn btn-outline-primary" type="button" @click="download('sk')">
+              Download
+            </button>
           </div>
         </div>
       </div>
@@ -106,6 +141,11 @@ export default {
       pk.value = '';
       sk.value = '';
       address.value = '';
+    };
+
+    const clear = () => {
+      reset();
+      hexseed.value = '';
     };
 
     const copyToClipboard = (type) => {
@@ -215,6 +255,13 @@ export default {
       address.value = Buffer.from(addrBytes).toString('hex');
     };
 
+    const allowActions = () => {
+      if (sk.value.length === 0) {
+        return true;
+      }
+      return false;
+    };
+
     return {
       hexseed,
       pk,
@@ -228,7 +275,15 @@ export default {
       getDilithiumDescriptor,
       copyToClipboard,
       download,
+      allowActions,
+      clear,
     };
   },
 };
 </script>
+<style scoped>
+h4 > small {
+  font-size: 1.1rem;
+  color: #4AAFFF;
+}
+</style>
