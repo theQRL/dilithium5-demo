@@ -24,7 +24,11 @@
     <div v-if="!allowActions()">
       <div class="container">
         <h4>
-          ID/Address <small>{{ address }} <button class="btn btn-outline-secondary btn-sm">Copy</button></small>
+          ID/Address
+          <small
+            >{{ address }}
+            <button class="btn btn-outline-secondary btn-sm" @click="copyToClipboard('address')">Copy</button></small
+          >
         </h4>
         <h5>Hexseed</h5>
         <div class="input-group mb-3">
@@ -161,6 +165,9 @@ export default {
           break;
         case 'sk':
           text = sk.value;
+          break;
+        case 'address':
+          text = address.value;
           break;
         default:
           break;
