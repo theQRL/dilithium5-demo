@@ -103,7 +103,7 @@
 <script>
 import { ref } from 'vue';
 import { CryptoPublicKeyBytes, CryptoSecretKeyBytes, cryptoSignKeypair } from '@theqrl/dilithium5';
-import { SHAKE } from 'sha3';
+import { shake256 } from '@noble/hashes/sha3.js';
 
 export default {
   setup() {
@@ -127,12 +127,10 @@ export default {
       const addr = new Uint8Array(addressSize);
       const descBytes = getDilithiumDescriptor(addr);
       addr[0] = descBytes;
-      const hashedKey = new SHAKE(256);
-      hashedKey.update(Buffer.from(pkToHash));
-      let hashedKeyDigest = hashedKey.digest({ buffer: Buffer.alloc(32), encoding: 'hex' });
-      hashedKeyDigest = hashedKeyDigest.slice(hashedKeyDigest.length - addressSize + 1);
-      for (let i = 0; i < hashedKeyDigest.length; i++) {
-        addr[i + 1] = hashedKeyDigest[i];
+      const hashedKeyDigest = shake256(pkToHash, { dkLen: 32 });
+      const start = hashedKeyDigest.length - addressSize + 1;
+      for (let i = 0; i < addressSize - 1; i++) {
+        addr[i + 1] = hashedKeyDigest[start + i];
       }
       return addr;
     };
@@ -140,7 +138,7 @@ export default {
     const randomBytes = (size) => {
       const array = new Uint8Array(size);
       window.crypto.getRandomValues(array);
-      return Buffer.from(array.buffer);
+      return array;
     };
 
     const reset = () => {
@@ -238,30 +236,39 @@ export default {
       return '';
     };
 
+    const hexToBytes = (hex) => {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+      }
+      return bytes;
+    };
+
+    const bytesToHex = (bytes) => {
+      return Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    };
+
     const generateKeypair = async (useRandom) => {
       const pkGen = new Uint8Array(CryptoPublicKeyBytes);
       const skGen = new Uint8Array(CryptoSecretKeyBytes);
-      let seed = null;
+      let seed;
       if (useRandom) {
         seed = randomBytes(48);
-        cryptoSignKeypair(seed, pkGen, skGen);
       } else {
         if (hexseed.value.length !== 96) {
           return;
         }
-        seed = Buffer.from(hexseed.value, 'hex');
-        cryptoSignKeypair(seed, pkGen, skGen);
+        seed = hexToBytes(hexseed.value);
       }
-      const hashedSeed = new SHAKE(256);
-      hashedSeed.update(seed);
-      const seedBuf = hashedSeed.digest({ buffer: Buffer.alloc(32) });
-      cryptoSignKeypair(seedBuf, pkGen, skGen);
-      pk.value = Buffer.from(pkGen).toString('hex');
-      sk.value = Buffer.from(skGen).toString('hex');
-      hexseed.value = Buffer.from(seed).toString('hex');
+      const hashedSeed = shake256(seed, { dkLen: 32 });
+      cryptoSignKeypair(hashedSeed, pkGen, skGen);
+      pk.value = bytesToHex(pkGen);
+      sk.value = bytesToHex(skGen);
+      hexseed.value = bytesToHex(seed);
       const addrBytes = getDilithiumAddressFromPK(pkGen);
-      // console.log(addrBytes);
-      address.value = Buffer.from(addrBytes).toString('hex');
+      address.value = bytesToHex(addrBytes);
     };
 
     const allowActions = () => {

@@ -199,8 +199,9 @@ function readFileAsync(file) {
     reader.onload = () => {
       // convert first 64 bytes of reader to string
 
-      // check if file beings with "DILITHIUM PUBLIC KEY" identifier
-      if (Buffer.from(reader.result.slice(0, 36)).toString() === '-----BEGIN DILITHIUM PUBLIC KEY-----') {
+      // check if file begins with "DILITHIUM PUBLIC KEY" identifier
+      const header = new TextDecoder().decode(new Uint8Array(reader.result.slice(0, 36)));
+      if (header === '-----BEGIN DILITHIUM PUBLIC KEY-----') {
         resolve(true);
       } else {
         resolve(false);
@@ -243,28 +244,30 @@ export default {
   },
   methods: {
     async validateFiles(key, sigFile, files) {
-      // first load key into a Buffer
-      let keyBuffer = await readFileAsText(key[0]);
-      // strip first and last line from keyBuffer
-      keyBuffer = keyBuffer.split('\n').slice(1, -1).join('\n');
-      if (keyBuffer.split('\n')[keyBuffer.split('\n').length - 1] === '-----END DILITHIUM PUBLIC KEY-----') {
-        // remove last line
-        keyBuffer = keyBuffer.split('\n').slice(0, -1).join('\n');
+      const hexToBytes = (hex) => {
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) {
+          bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+        }
+        return bytes;
+      };
+      // first load key as text
+      let keyText = await readFileAsText(key[0]);
+      // strip first and last line (PEM headers)
+      keyText = keyText.split('\n').slice(1, -1).join('\n');
+      if (keyText.split('\n')[keyText.split('\n').length - 1] === '-----END DILITHIUM PUBLIC KEY-----') {
+        keyText = keyText.split('\n').slice(0, -1).join('\n');
       }
-      // replace all newlines in keyBuffer
-      keyBuffer = keyBuffer.replace(/\n/g, '');
-      // convert keyBuffer to hexstring from base64
-      keyBuffer = Buffer.from(keyBuffer, 'base64').toString('hex');
-      // now signature into a Buffer
-      const sigBuffer = await readFileAsText(sigFile[0]);
-      // parse sigBuffer to get the signatures as a string
-      const sigString = sigBuffer.toString();
-      // split sigString into array of signatures
-      const sigArray = sigString.split('\n');
+      // replace all newlines
+      keyText = keyText.replace(/\n/g, '');
+      // convert from base64 to Uint8Array
+      const keyBytes = Uint8Array.from(atob(keyText), (c) => c.charCodeAt(0));
+      // now signature into text
+      const sigText = await readFileAsText(sigFile[0]);
+      const sigArray = sigText.split('\n');
       // loop through files and signatures
       files.forEach(async (file, index) => {
         sigArray.forEach(async (sig) => {
-          // sig contains a dilithium signature and a filename... split by a space
           const signature = sig.split(' ')[0];
           const filename = sig
             .split(' ')
@@ -273,10 +276,9 @@ export default {
           if (signature.length === 9190 && filename.length > 0) {
             if (file.name === filename) {
               const fileBuffer = await readBinaryFile(file);
-              const sigHex = Buffer.from(signature, 'hex');
-              const msg = Buffer.from(fileBuffer);
-              const pk = Buffer.from(keyBuffer, 'hex');
-              const verified = cryptoSignVerify(sigHex, msg, pk);
+              const sigBytes = hexToBytes(signature);
+              const msg = new Uint8Array(fileBuffer);
+              const verified = cryptoSignVerify(sigBytes, msg, keyBytes);
               if (verified === true) {
                 this.verification[index] = true;
               } else {
