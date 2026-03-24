@@ -185,8 +185,9 @@ function readFileAsync(file) {
     reader.onload = () => {
       // convert first 64 bytes of reader to string
 
-      // check if file beings with "DILITHIUM PRIVATE KEY" identifier
-      if (Buffer.from(reader.result.slice(0, 37)).toString() === '-----BEGIN DILITHIUM PRIVATE KEY-----') {
+      // check if file begins with "DILITHIUM PRIVATE KEY" identifier
+      const header = new TextDecoder().decode(new Uint8Array(reader.result.slice(0, 37)));
+      if (header === '-----BEGIN DILITHIUM PRIVATE KEY-----') {
         resolve(true);
       } else {
         resolve(false);
@@ -231,21 +232,22 @@ export default {
   },
   methods: {
     async validateFiles(key, files) {
-      // first load key into a Buffer
-      let keyBuffer = await readFileAsText(key[0]);
-      // strip first and last line from keyBuffer
-      keyBuffer = keyBuffer.split('\n').slice(1, -1).join('\n');
-      // replace all newlines in keyBuffer
-      keyBuffer = keyBuffer.replace(/\n/g, '');
-      // convert keyBuffer to hexstring from base64
-      keyBuffer = Buffer.from(keyBuffer, 'base64').toString('hex');
+      // first load key as text
+      let keyText = await readFileAsText(key[0]);
+      // strip first and last line (PEM headers)
+      keyText = keyText.split('\n').slice(1, -1).join('\n');
+      // replace all newlines
+      keyText = keyText.replace(/\n/g, '');
+      // convert from base64 to Uint8Array
+      const keyBytes = Uint8Array.from(atob(keyText), (c) => c.charCodeAt(0));
       files.forEach(async (file, index) => {
         const fileBuffer = await readBinaryFile(file);
-        const msg = Buffer.from(fileBuffer);
-        const sk = Buffer.from(keyBuffer, 'hex');
-        let sig = cryptoSign(msg, sk);
+        const msg = new Uint8Array(fileBuffer);
+        let sig = cryptoSign(msg, keyBytes, false);
         // get first 4595 bytes of sig (since this returns SIGNATURE + MESSAGE)
-        sig = Buffer.from(sig).slice(0, 4595).toString('hex');
+        sig = Array.from(sig.slice(0, 4595))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
         this.verification[index] = sig;
       });
     },

@@ -85,6 +85,20 @@ import {
   // cryptoSignSignature,
 } from '@theqrl/dilithium5';
 
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 function testWrapper(ref, test, description) {
   try {
     if (ref === test) {
@@ -112,19 +126,19 @@ function runConsoleTests() {
 
   console.log('\n\n=== cryptoSignKeypair');
   try {
-    cryptoSignKeypair(Buffer.from(HASHEDSEED, 'hex'), pk, sk);
+    cryptoSignKeypair(hexToBytes(HASHEDSEED), pk, sk);
   } catch (e) {
     console.log('❌ cryptoSignKeypair fail');
   }
-  testWrapper(PK, Buffer.from(pk, 'binary').toString('hex'), 'pk');
-  testWrapper(SK, Buffer.from(sk, 'binary').toString('hex'), 'sk');
+  testWrapper(PK, bytesToHex(pk), 'pk');
+  testWrapper(SK, bytesToHex(sk), 'sk');
 
   console.log('\n=== cryptoSign ===');
-  const msg = Buffer.from(MESSAGE, 'hex');
-  sk = Buffer.from(SK, 'hex');
+  const msg = hexToBytes(MESSAGE);
+  sk = hexToBytes(SK);
   try {
     const sigMessage = cryptoSign(msg, sk, false);
-    testWrapper(SIGNATURE + MESSAGE, Buffer.from(sigMessage, 'binary').toString('hex'), 'signed message');
+    testWrapper(SIGNATURE + MESSAGE, bytesToHex(sigMessage), 'signed message');
   } catch (e) {
     console.log('❌ cryptoSign fail');
   }
@@ -154,18 +168,14 @@ export default {
     cryptoSign() {
       // cryptosign returns signature + message
       // this method trims message
-      this.signature = Buffer.from(
-        cryptoSign(Buffer.from(this.message, 'hex'), Buffer.from(this.sk, 'hex'), false),
-        'binary'
-      )
-        .toString('hex')
-        .slice(0, -this.message.length);
+      const sigMessage = cryptoSign(hexToBytes(this.message), hexToBytes(this.sk), false);
+      this.signature = bytesToHex(sigMessage).slice(0, -this.message.length);
       this.verified = true;
     },
     cryptoSignVerify() {
-      const sig = Buffer.from(this.signature, 'hex');
-      const msg = Buffer.from(this.message, 'hex');
-      const pk = Buffer.from(this.pk, 'hex');
+      const sig = hexToBytes(this.signature);
+      const msg = hexToBytes(this.message);
+      const pk = hexToBytes(this.pk);
       this.verified = cryptoSignVerify(sig, msg, pk);
     },
     isHex(str) {
