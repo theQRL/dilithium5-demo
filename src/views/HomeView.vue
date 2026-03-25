@@ -1,170 +1,145 @@
 <script setup></script>
 
 <template>
-  <main>
-    <div class="container">
-      <div class="row text-center">
-        <div class="col">
-          <span v-if="filelistKey.length === 0" class="text-muted">❗Key&nbsp;&nbsp;</span>
-          <span v-if="filelistSig.length === 0" class="text-muted">❗Signature&nbsp;&nbsp;</span>
-          <span v-if="filelist.length === 0" class="text-muted">❗File&nbsp;&nbsp;</span>
-          <span v-if="filelistKey.length !== 0 && filelistSig.length !== 0 && filelist.length !== 0" class="text-muted">
-            ✅ Ready&nbsp;&nbsp;
+  <main class="view-enter">
+    <div class="stagger">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <div class="section-label">Signature Verification</div>
+          <h1 class="section-title mb-0">Verify Files</h1>
+        </div>
+        <div class="status-bar">
+          <span
+            class="status-bar__dot"
+            :class="{
+              'status-bar__dot--warning': filelistKey.length === 0 || filelistSig.length === 0 || filelist.length === 0,
+              'status-bar__dot--ready': filelistKey.length !== 0 && filelistSig.length !== 0 && filelist.length !== 0,
+            }"
+          ></span>
+          <span v-if="filelistKey.length === 0 || filelistSig.length === 0 || filelist.length === 0">
+            <span v-if="filelistKey.length === 0">Key</span>
+            <span v-if="filelistSig.length === 0">&nbsp;Sig</span>
+            <span v-if="filelist.length === 0">&nbsp;File</span>
+            &mdash; needed
           </span>
-          <!--
-            <button class="btn btn-success btn-sm" @click="validateFiles(filelistKey, filelistSig, filelist)"
-              :disabled="(filelistKey.length === 0 || filelistSig.length === 0 || filelist.length === 0)">
-              Start
-            </button>
-          -->
+          <span v-else>Ready</span>
         </div>
       </div>
 
-      <div class="container-fluid text-center mt-5" @dragover="dragover" @dragleave="dragleave" @drop="dropKey">
+      <!-- Public Key Drop -->
+      <div
+        class="drop-zone mb-4"
+        :class="{ 'drag-active': dragStates.key }"
+        @dragover.prevent="dragStates.key = true"
+        @dragleave="dragStates.key = false"
+        @drop.prevent="dropKey"
+        @click="$refs.fileKey.click()"
+      >
         <input
-          id="assetsFieldHandleKey"
           ref="fileKey"
           type="file"
-          name="fields[assetsFieldHandleKey][]"
           class="d-none"
           accept="*.*"
           @change="onChangeKey"
         />
-
-        <label
-          v-if="filelistKey.length === 0"
-          for="assetsFieldHandleKey"
-          class="p-3 pt-5 pb-5 border border-primary bg-light cursor-pointer"
-        >
-          <div>
-            Drop public key file or
-            <span class="underline">click here</span> to select
-          </div>
-        </label>
-        <div v-if="keyError">ERROR: Invalid key format</div>
-        <div class="container">
-          <div v-if="filelistKey.length !== 0" v-cloak class="container row mt-4">
-            <div v-for="file in filelistKey" :key="file" class="col-sm-6 mx-auto">
-              <div class="card mb-3">
-                <div class="card-body">
-                  <div class="card-subtitle text-muted">Public Key file:</div>
-                  <div class="card-title">
-                    {{ file.name }}<br />
-                    <span class="text-success">✅ Valid public key file</span>
-                  </div>
-                  <div class="card-body">
-                    <button
-                      type="button"
-                      title="Remove file"
-                      class="btn btn-danger btn-sm"
-                      @click="removeKey(filelistKey.indexOf(file))"
-                    >
-                      Remove &times;
-                    </button>
-                  </div>
-                </div>
-              </div>
+        <div v-if="filelistKey.length === 0" class="drop-zone__label text-center">
+          <span class="drop-zone__icon">&#9919;</span>
+          Drop <strong>public key</strong> file or click to select
+        </div>
+        <div v-else>
+          <div v-for="file in filelistKey" :key="file" class="file-card file-card--success">
+            <div class="file-card__meta">Public Key</div>
+            <div class="file-card__name">{{ file.name }}</div>
+            <div class="file-card__status file-card__status--pass">Valid public key</div>
+            <div class="mt-2">
+              <button class="btn-action btn-action--danger" @click.stop="removeKey(filelistKey.indexOf(file))">Remove</button>
             </div>
           </div>
         </div>
       </div>
+      <div v-if="keyError" class="error-msg mb-4">Invalid key format — must be a Dilithium public key PEM file</div>
 
-      <div class="container-fluid text-center mt-5" @dragover="dragover" @dragleave="dragleave" @drop="dropSig">
+      <!-- Signature Drop -->
+      <div
+        class="drop-zone mb-4"
+        :class="{ 'drag-active': dragStates.sig }"
+        @dragover.prevent="dragStates.sig = true"
+        @dragleave="dragStates.sig = false"
+        @drop.prevent="dropSig"
+        @click="$refs.fileSig.click()"
+      >
         <input
-          id="assetsFieldHandleSig"
           ref="fileSig"
           type="file"
-          name="fields[assetsFieldHandleSig][]"
           class="d-none"
           accept="*.*"
           @change="onChangeSig"
         />
-
-        <label
-          v-if="filelistSig.length === 0"
-          for="assetsFieldHandleSig"
-          class="p-3 pt-5 pb-5 border border-primary bg-light cursor-pointer"
-        >
-          <div>
-            Drop signature file or
-            <span class="underline">click here</span> to select
-          </div>
-        </label>
-
-        <div class="container">
-          <div v-if="filelistSig.length !== 0" v-cloak class="container row mt-4">
-            <div v-for="file in filelistSig" :key="file" class="col-sm-6 mx-auto">
-              <div class="card mb-3">
-                <div class="card-body">
-                  <div class="card-subtitle text-muted">Signature file:</div>
-                  <div class="card-title">{{ file.name }}</div>
-                  <div class="card-body">
-                    <button
-                      type="button"
-                      title="Remove file"
-                      class="btn btn-danger btn-sm"
-                      @click="removeSig(filelistSig.indexOf(file))"
-                    >
-                      Remove &times;
-                    </button>
-                  </div>
-                </div>
-              </div>
+        <div v-if="filelistSig.length === 0" class="drop-zone__label text-center">
+          <span class="drop-zone__icon">&#9998;</span>
+          Drop <strong>signature</strong> file or click to select
+        </div>
+        <div v-else>
+          <div v-for="file in filelistSig" :key="file" class="file-card">
+            <div class="file-card__meta">Signature</div>
+            <div class="file-card__name">{{ file.name }}</div>
+            <div class="mt-2">
+              <button class="btn-action btn-action--danger" @click.stop="removeSig(filelistSig.indexOf(file))">Remove</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="container-fluid text-center mt-5" @dragover="dragover" @dragleave="dragleave" @drop="drop">
+      <!-- Files to Verify Drop -->
+      <div
+        class="drop-zone mb-4"
+        :class="{ 'drag-active': dragStates.files }"
+        @dragover.prevent="dragStates.files = true"
+        @dragleave="dragStates.files = false"
+        @drop.prevent="dropFiles"
+        @click="$refs.file.click()"
+      >
         <input
-          id="assetsFieldHandle"
           ref="file"
           type="file"
           multiple
-          name="fields[assetsFieldHandle][]"
           class="d-none"
           accept="*.*"
           @change="onChange"
         />
+        <div class="drop-zone__label text-center">
+          <span class="drop-zone__icon">&#128196;</span>
+          Drop <strong>file(s)</strong> to verify or click to select
+        </div>
+      </div>
 
-        <label for="assetsFieldHandle" class="p-3 pt-5 pb-5 border border-primary bg-light cursor-pointer">
-          <div>
-            Drop file(s) to validate or
-            <span class="underline">click here</span> to select
-          </div>
-        </label>
-        <div class="container">
-          <div v-if="filelist.length && ready === filelist.length" v-cloak class="container row mt-4">
-            <div v-for="file in filelist" :key="file" class="col-sm-6">
-              <div
-                class="card mb-3"
-                :class="{
-                  'bg-success': verification[filelist.indexOf(file)] === true,
-                  'bg-danger': verification[filelist.indexOf(file)] === false,
-                }"
-              >
-                <div class="card-body">
-                  <div class="card-subtitle text-muted">
-                    <span v-if="verification[filelist.indexOf(file)] === 'error'">Error</span>
-                  </div>
-                  <div class="card-title">{{ file.name }}</div>
-                  <div class="card-body">
-                    <span v-if="verification[filelist.indexOf(file)] === null">Pending verification</span>
-                    <span v-if="verification[filelist.indexOf(file)] === true">PASSED verification</span>
-                    <span v-if="verification[filelist.indexOf(file)] === false">FAILED verification</span>
-                    <span v-if="verification[filelist.indexOf(file)] === 'error'">No signature found</span>
-                    <div></div>
-                    <button
-                      type="button"
-                      title="Remove file"
-                      class="btn btn-danger btn-sm"
-                      @click="remove(filelist.indexOf(file))"
-                    >
-                      Remove &times;
-                    </button>
-                  </div>
-                </div>
-              </div>
+      <!-- Verification Results -->
+      <div v-if="filelist.length && ready === filelist.length" class="row g-3 mt-2">
+        <div v-for="file in filelist" :key="file" class="col-sm-6">
+          <div
+            class="file-card"
+            :class="{
+              'file-card--success': verification[filelist.indexOf(file)] === true,
+              'file-card--danger': verification[filelist.indexOf(file)] === false,
+            }"
+          >
+            <div class="file-card__meta">
+              <span v-if="verification[filelist.indexOf(file)] === 'error'">Error</span>
+              <span v-else>Verification</span>
+            </div>
+            <div class="file-card__name">{{ file.name }}</div>
+            <div class="file-card__status" :class="{
+              'file-card__status--pending': verification[filelist.indexOf(file)] === null,
+              'file-card__status--pass': verification[filelist.indexOf(file)] === true,
+              'file-card__status--fail': verification[filelist.indexOf(file)] === false || verification[filelist.indexOf(file)] === 'error',
+            }">
+              <span v-if="verification[filelist.indexOf(file)] === null">Pending</span>
+              <span v-if="verification[filelist.indexOf(file)] === true">Passed</span>
+              <span v-if="verification[filelist.indexOf(file)] === false">Failed</span>
+              <span v-if="verification[filelist.indexOf(file)] === 'error'">No signature found</span>
+            </div>
+            <div class="mt-2">
+              <button class="btn-action btn-action--danger" @click="remove(filelist.indexOf(file))">Remove</button>
             </div>
           </div>
         </div>
@@ -197,9 +172,6 @@ function readFileAsync(file) {
     const reader = new FileReader();
 
     reader.onload = () => {
-      // convert first 64 bytes of reader to string
-
-      // check if file begins with "DILITHIUM PUBLIC KEY" identifier
       const header = new TextDecoder().decode(new Uint8Array(reader.result.slice(0, 36)));
       if (header === '-----BEGIN DILITHIUM PUBLIC KEY-----') {
         resolve(true);
@@ -217,7 +189,6 @@ function readBinaryFile(file) {
     const reader = new FileReader();
 
     reader.onload = () => {
-      // The file's binary content is available in reader.result
       resolve(reader.result);
     };
 
@@ -225,7 +196,6 @@ function readBinaryFile(file) {
       reject(error);
     };
 
-    // Read the file as an ArrayBuffer
     reader.readAsArrayBuffer(file);
   });
 }
@@ -240,6 +210,7 @@ export default {
       keyError: false,
       verification: [],
       canValidate: false,
+      dragStates: { key: false, sig: false, files: false },
     };
   },
   methods: {
@@ -251,21 +222,15 @@ export default {
         }
         return bytes;
       };
-      // first load key as text
       let keyText = await readFileAsText(key[0]);
-      // strip first and last line (PEM headers)
       keyText = keyText.split('\n').slice(1, -1).join('\n');
       if (keyText.split('\n')[keyText.split('\n').length - 1] === '-----END DILITHIUM PUBLIC KEY-----') {
         keyText = keyText.split('\n').slice(0, -1).join('\n');
       }
-      // replace all newlines
       keyText = keyText.replace(/\n/g, '');
-      // convert from base64 to Uint8Array
       const keyBytes = Uint8Array.from(atob(keyText), (c) => c.charCodeAt(0));
-      // now signature into text
       const sigText = await readFileAsText(sigFile[0]);
       const sigArray = sigText.split('\n');
-      // loop through files and signatures
       files.forEach(async (file, index) => {
         sigArray.forEach(async (sig) => {
           const signature = sig.split(' ')[0];
@@ -288,7 +253,6 @@ export default {
           }
         });
       });
-      // will need to loop again and if no verification boolean (this.verification[index] === null) set an error
       files.forEach((file, index) => {
         if (this.verification[index] === null) {
           this.verification[index] = 'error';
@@ -306,7 +270,6 @@ export default {
     async onChange() {
       const fl = [...this.$refs.file.files];
       Object.keys(fl).forEach(async () => {
-        // const file = fl[i];
         this.ready += 1;
         this.verification.push(null);
       });
@@ -317,9 +280,6 @@ export default {
     async onChangeSig() {
       console.log('changing sig file');
       const fl = [...this.$refs.fileSig.files];
-      // Object.keys(fl).forEach(async (i) => {
-      //   const file = fl[i];
-      // });
       this.filelistSig = [...fl];
       this.verification = new Array(this.filelist.length).fill(null);
       this.checkCanValidate();
@@ -353,7 +313,6 @@ export default {
     },
     removeKey(i) {
       this.filelistKey.splice(i, 1);
-      // remove item from FileList
       const dt = new DataTransfer();
       const x = Array.from(this.$refs.fileKey.files);
       x.splice(i, 1);
@@ -366,7 +325,6 @@ export default {
     },
     removeSig(i) {
       this.filelistSig.splice(i, 1);
-      // remove item from FileList
       const dt = new DataTransfer();
       const x = Array.from(this.$refs.fileSig.files);
       x.splice(i, 1);
@@ -377,32 +335,20 @@ export default {
       this.verification = new Array(this.filelist.length).fill(null);
       this.checkCanValidate();
     },
-    dragover(event) {
-      event.preventDefault();
-      if (!event.currentTarget.classList.contains('bg-success')) {
-        event.currentTarget.classList.add('bg-success');
-      }
-    },
-    dragleave(event) {
-      event.currentTarget.classList.remove('bg-success');
-    },
-    drop(event) {
-      event.preventDefault();
-      this.$refs.file.files = event.dataTransfer.files;
-      this.onChange();
-      event.currentTarget.classList.remove('bg-success');
-    },
     dropKey(event) {
-      event.preventDefault();
+      this.dragStates.key = false;
       this.$refs.fileKey.files = event.dataTransfer.files;
       this.onChangeKey();
-      event.currentTarget.classList.remove('bg-success');
     },
     dropSig(event) {
-      event.preventDefault();
+      this.dragStates.sig = false;
       this.$refs.fileSig.files = event.dataTransfer.files;
       this.onChangeSig();
-      event.currentTarget.classList.remove('bg-success');
+    },
+    dropFiles(event) {
+      this.dragStates.files = false;
+      this.$refs.file.files = event.dataTransfer.files;
+      this.onChange();
     },
   },
 };

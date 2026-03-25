@@ -3,77 +3,125 @@ import { RouterLink, RouterView } from 'vue-router';
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="/">
-      <img src="./assets/yellow.svg" height="60" class="d-inline-block align-top" />
-      <div class="sub">Dilithium 5</div>
-    </a>
+  <header class="app-header">
+    <nav class="app-nav">
+      <a class="app-brand" href="/">
+        <img src="./assets/yellow.svg" height="44" class="app-brand__logo" />
+        <span class="app-brand__sub">Dilithium 5</span>
+      </a>
 
-    <ul class="collapse navbar-collapse navbar-nav">
-      <li class="nav-item">
-        <RouterLink class="nav-link" to="/">Verify</RouterLink>
-      </li>
-      <li class="nav-item">
-        <RouterLink class="nav-link" to="/keypair">Keypair</RouterLink>
-      </li>
-      <li class="nav-item">
-        <RouterLink class="nav-link" to="/sign">Sign</RouterLink>
-      </li>
-      <li class="nav-item">
-        <RouterLink class="nav-link" to="/about">About</RouterLink>
-      </li>
-    </ul>
-  </nav>
+      <div class="app-nav__links">
+        <RouterLink class="app-nav__link" to="/">Verify</RouterLink>
+        <RouterLink class="app-nav__link" to="/keypair">Keypair</RouterLink>
+        <RouterLink class="app-nav__link" to="/sign">Sign</RouterLink>
+        <RouterLink class="app-nav__link" to="/about">About</RouterLink>
+      </div>
+    </nav>
+  </header>
 
-  <nav class="navbar navbar-expand navbar-light bg-light d-lg-none">
-    <ul class="navbar-nav">
-      <li class="nav-item">
-        <RouterLink class="nav-link" to="/">Verify</RouterLink>
-      </li>
-      <li class="nav-item">
-        <RouterLink class="nav-link" to="/keypair">Keypair</RouterLink>
-      </li>
-      <li class="nav-item">
-        <RouterLink class="nav-link" to="/sign">Sign</RouterLink>
-      </li>
-      <li class="nav-item">
-        <RouterLink class="nav-link" to="/about">About</RouterLink>
-      </li>
-    </ul>
-  </nav>
-  <RouterView class="p-3 pt-5"></RouterView>
+  <main class="app-main">
+    <RouterView></RouterView>
+  </main>
 </template>
+
 <style lang="scss" scoped>
-.navbar {
-  padding-bottom: 15px;
-}
-.nav-item {
-  padding-left: 20px;
-}
-.nav-link {
-  color: #fff;
-  transition: opacity 0.3s ease-in-out, color 0.3s ease-in-out;
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--surface-3);
 }
 
-.nav-link:hover {
-  color: #ffa729;
-  transition: opacity 0.3s ease-in-out, color 0.3s ease-in-out;
+.app-nav {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
 }
-.nav-link:focus {
-  color: #fff;
-  transition: opacity 0.3s ease-in-out, color 0.3s ease-in-out;
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
 }
-.router-link-active {
-  color: #fff;
-  border-bottom: 4px solid #4aafff;
-  transition: opacity 0.3s ease-in-out, color 0.3s ease-in-out;
+
+.app-brand__logo {
+  height: 36px;
 }
-.router-link-active:hover {
-  color: #ffa729;
+
+.app-brand__sub {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
-.sub {
-  font-size: 0.6em;
-  margin-top: -18px;
-  margin-left: 50px;
+
+.app-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.app-nav__link {
+  position: relative;
+  padding: 0.5rem 1.1rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.app-nav__link:hover {
+  color: var(--text-primary);
+}
+
+.app-nav__link::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 1.1rem;
+  right: 1.1rem;
+  height: 2px;
+  background: var(--amber);
+  transform: scaleX(0);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-nav__link:hover::after {
+  transform: scaleX(1);
+}
+
+.app-nav__link.router-link-active {
+  color: var(--text-primary);
+}
+
+.app-nav__link.router-link-active::after {
+  transform: scaleX(1);
+}
+
+.app-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+}
+
+@media (max-width: 600px) {
+  .app-nav__link {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.68rem;
+  }
+  .app-brand__sub {
+    display: none;
+  }
 }
 </style>

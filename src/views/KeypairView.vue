@@ -1,105 +1,92 @@
 <template>
-  <main>
-    <div class="container">
-      <h4 v-if="allowActions()">Generate new random keypair</h4>
-      <button v-if="allowActions()" class="btn btn-outline-secondary" type="button" @click="generateKeypair(true)">
-        Generate
-      </button>
-      <button v-if="!allowActions()" class="btn btn-outline-danger" type="button" @click="clear()">Reset</button>
-    </div>
-    <hr v-if="allowActions()" />
-    <div v-if="allowActions()" class="container">
-      <h4>Regenerate keypair from existing hexseed</h4>
-      <div class="input-group mb-3">
-        <input v-model="hexseed" type="text" class="form-control" placeholder="Hexseed" @input="reset()" />
-        <div class="input-group-append">
-          <button class="btn btn-outline-secondary" type="button" @click="generateKeypair(false)">Generate</button>
-        </div>
-      </div>
-      <label v-if="!isValid(hexseed) && hexseed.length > 0" class="form-check-label alert alert-danger">
-        Hexseed must be 96 hex characters long
-      </label>
-    </div>
-    <hr />
-    <div v-if="!allowActions()">
-      <div class="container">
-        <h4>
-          ID/Address
-          <small
-            >{{ address }}
-            <button class="btn btn-outline-secondary btn-sm" @click="copyToClipboard('address')">Copy</button></small
-          >
-        </h4>
-        <h5>Hexseed</h5>
-        <div class="input-group mb-3">
-          <input type="text" class="form-control" :value="validatedHS(hexseed)" readonly />
-          <div class="input-group-append">
-            <button
-              :disabled="allowActions()"
-              class="btn btn-outline-secondary"
-              type="button"
-              @click="copyToClipboard('hexseed')"
-            >
-              Copy
-            </button>
+  <main class="view-enter">
+    <div class="stagger">
+      <div class="section-label">Post-Quantum Keys</div>
+      <h1 class="section-title">Keypair</h1>
+
+      <!-- Generate section -->
+      <div v-if="allowActions()">
+        <div class="generate-panel mb-4">
+          <div class="generate-panel__header">
+            <span class="generate-panel__title">Generate random keypair</span>
+            <button class="btn-action btn-action--primary" @click="generateKeypair(true)">Generate</button>
           </div>
-          <div class="input-group-append">
-            <button
-              :disabled="allowActions()"
-              class="btn btn-outline-primary"
-              type="button"
-              @click="download('hexseed')"
-            >
-              Download
-            </button>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="generate-panel">
+          <div class="generate-panel__header mb-3">
+            <span class="generate-panel__title">Regenerate from hexseed</span>
+          </div>
+          <div class="crypto-input">
+            <input
+              v-model="hexseed"
+              type="text"
+              class="crypto-input__field"
+              placeholder="Enter 96-character hexseed..."
+              @input="reset()"
+            />
+            <button class="crypto-input__btn crypto-input__btn--primary" @click="generateKeypair(false)">Generate</button>
+          </div>
+          <div v-if="!isValid(hexseed) && hexseed.length > 0" class="error-msg mt-3">
+            Hexseed must be 96 hex characters long
           </div>
         </div>
       </div>
-      <div class="container">
-        <h5>Public key</h5>
-        <div class="input-group mb-3">
-          <input v-model="pk" type="text" class="form-control" readonly />
-          <div class="input-group-append">
-            <button
-              :disabled="allowActions()"
-              class="btn btn-outline-secondary"
-              type="button"
-              @click="copyToClipboard('pk')"
-            >
-              Copy
-            </button>
+
+      <!-- Reset -->
+      <div v-if="!allowActions()" class="mb-4">
+        <button class="btn-action btn-action--danger" @click="clear()">Reset Keypair</button>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Key output -->
+      <div v-if="!allowActions()">
+        <!-- Address -->
+        <div class="mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="section-label mb-0">ID / Address</div>
+            <button class="btn-action" @click="copyToClipboard('address')">Copy</button>
           </div>
-          <div class="input-group-append">
-            <button :disabled="allowActions()" class="btn btn-outline-primary" type="button" @click="download('pk')">
-              Download
-            </button>
+          <div class="address-display">{{ address }}</div>
+        </div>
+
+        <!-- Hexseed -->
+        <div class="mb-4">
+          <div class="section-label">Hexseed</div>
+          <div class="crypto-input">
+            <input type="text" class="crypto-input__field" :value="validatedHS(hexseed)" readonly />
+            <button class="crypto-input__btn" @click="copyToClipboard('hexseed')">Copy</button>
+            <button class="crypto-input__btn crypto-input__btn--primary" @click="download('hexseed')">Download</button>
           </div>
         </div>
-      </div>
-      <div class="container">
-        <h5>Secret key</h5>
-        <div class="input-group mb-3">
-          <input v-model="sk" type="text" class="form-control" readonly />
-          <div class="input-group-append">
-            <button
-              :disabled="allowActions()"
-              class="btn btn-outline-secondary"
-              type="button"
-              @click="copyToClipboard('sk')"
-            >
-              Copy
-            </button>
+
+        <!-- Public Key -->
+        <div class="mb-4">
+          <div class="section-label">Public Key</div>
+          <div class="crypto-input">
+            <input v-model="pk" type="text" class="crypto-input__field" readonly />
+            <button class="crypto-input__btn" @click="copyToClipboard('pk')">Copy</button>
+            <button class="crypto-input__btn crypto-input__btn--primary" @click="download('pk')">Download</button>
           </div>
-          <div class="input-group-append">
-            <button :disabled="allowActions()" class="btn btn-outline-primary" type="button" @click="download('sk')">
-              Download
-            </button>
+        </div>
+
+        <!-- Secret Key -->
+        <div class="mb-4">
+          <div class="section-label">Secret Key</div>
+          <div class="crypto-input">
+            <input v-model="sk" type="text" class="crypto-input__field" readonly />
+            <button class="crypto-input__btn" @click="copyToClipboard('sk')">Copy</button>
+            <button class="crypto-input__btn crypto-input__btn--primary" @click="download('sk')">Download</button>
           </div>
         </div>
       </div>
     </div>
   </main>
 </template>
+
 <script>
 import { ref } from 'vue';
 import { CryptoPublicKeyBytes, CryptoSecretKeyBytes, cryptoSignKeypair } from '@theqrl/dilithium5';
@@ -113,9 +100,6 @@ export default {
     const address = ref('');
 
     const getDilithiumDescriptor = (addr) => {
-      /*
-        First Zond testnet address byte is 0x02, but mainnet address byte is 0x01
-    */
       if (!addr) {
         throw new Error('Address is not defined');
       }
@@ -174,14 +158,11 @@ export default {
     };
 
     const hexStringToRFC7468 = (hexString) => {
-      // first convert hexstring to binary
       const binaryString = hexString
         .match(/.{1,2}/g)
         .map((byte) => String.fromCharCode(parseInt(byte, 16)))
         .join('');
-      // then convert binary to base64
       const b = btoa(binaryString);
-      // and split into 64 character lines
       return b.match(/.{1,64}/g).join('\n');
     };
 
@@ -222,7 +203,6 @@ export default {
       if (hs.length !== 96) {
         return false;
       }
-      // return false if not hex
       if (!/^[0-9A-Fa-f]+$/.test(hs)) {
         return false;
       }
@@ -297,9 +277,23 @@ export default {
   },
 };
 </script>
+
 <style scoped>
-h4 > small {
-  font-size: 1.1rem;
-  color: #4aafff;
+.generate-panel {
+  background: var(--surface-1);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+}
+
+.generate-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.generate-panel__title {
+  font-size: 0.95rem;
+  color: var(--text-primary);
 }
 </style>
